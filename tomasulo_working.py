@@ -1,6 +1,6 @@
 #########################################################################################################
-# tomasulo.py
-# This is where you will implement your main Tomasulo logic.
+# tomasulo_working.py
+# Working tomasulo code.
 #
 #########################################################################################################
 
@@ -96,23 +96,26 @@ def stage_exec():
     print("Stage Exec:")
     common_data_bus = []
 
-    ## TO-DO: Progress through ALUs ------------------------------------------------------------------------
+    ## Progress through ALUs
 
     i = 0
     for alu in alu_functional_units:
 
-        # If we find a busy ALU, then we'll mark it as completed, since the instruction currently in there has been executing for one full cycle!
-        # We'll then "broadcast" that completed reservation station on the common data bus. In our case, we can simply append it to the common_data_bus
-        # list: a list of reservation stations of completed instructions. We'll then clean-up the functional unit by removing its associated_reservation_station
-        # field and setting both its busy bit and current_cycles_spent_executing bit to 0.
+        # If an ALU is currently busy (i.e. it has an associated reservation station), check if the number of
+        # cycles spent executing is equal to the cycle time. If it is, then this ALU has completed its instruction.
+        # We can then broadcast that reservation station on the CDB, and clear the ALU
 
+        if (alu.busy == 1 and (alu.cycle_time == alu.current_cycles_spent_executing)):
 
-        print(f"    Instruction Completed in ALU {i}: {alu.associated_reservation_station.instruction_count}: {alu.associated_reservation_station.instruction_opcode}  R{alu.associated_reservation_station.dest_reg}, R{alu.associated_reservation_station.src_reg1}, R{alu.associated_reservation_station.src_reg2}")
-
+            print(f"    Instruction Completed in ALU {i}: {alu.associated_reservation_station.instruction_count}: {alu.associated_reservation_station.instruction_opcode}  R{alu.associated_reservation_station.dest_reg}, R{alu.associated_reservation_station.src_reg1}, R{alu.associated_reservation_station.src_reg2}")
+            common_data_bus.append(alu.associated_reservation_station)
+            alu.associated_reservation_station = 0
+            alu.busy = 0
+            alu.current_cycles_spent_executing = 0
 
         i += 1
 
-    ## TO-DO: Progress through MULs ------------------------------------------------------------------------
+    ## Progress through MULs
 
     j = 0
     for mul in mul_functional_units:
@@ -124,14 +127,21 @@ def stage_exec():
         # Otherwise, if the MUL is currently not done finished with its instruction, increment the number of cycles
         # it has currently spent executing the instruction.
 
+        if (mul.busy == 1 and (mul.cycle_time == mul.current_cycles_spent_executing)):
 
-        print(f"    Instruction Completed in MUL {j}: {mul.associated_reservation_station.instruction_count}: {mul.associated_reservation_station.instruction_opcode}  R{mul.associated_reservation_station.dest_reg}, R{mul.associated_reservation_station.src_reg1}, R{mul.associated_reservation_station.src_reg2}")
+            print(f"    Instruction Completed in MUL {j}: {mul.associated_reservation_station.instruction_count}: {mul.associated_reservation_station.instruction_opcode}  R{mul.associated_reservation_station.dest_reg}, R{mul.associated_reservation_station.src_reg1}, R{mul.associated_reservation_station.src_reg2}")
+            common_data_bus.append(mul.associated_reservation_station)
+            mul.associated_reservation_station = 0
+            mul.busy = 0
+            mul.current_cycles_spent_executing = 0
 
+        elif (mul.busy == 1):
+
+            mul.current_cycles_spent_executing += 1
 
         j += 1
 
-
-    ## TO-DO: Progress through LSUs ------------------------------------------------------------------------
+    ## Progress through LSUs
 
     k = 0
     for lsu in lsu_functional_units:
@@ -143,15 +153,22 @@ def stage_exec():
         # Otherwise, if the MUL is currently not done finished with its instruction, increment the number of cycles
         # it has currently spent executing the instruction.
 
+        if (lsu.busy == 1 and (lsu.cycle_time == lsu.current_cycles_spent_executing)):
 
-        print(f"    Instruction Completed in LSU {k}: {lsu.associated_reservation_station.instruction_count}: {lsu.associated_reservation_station.instruction_opcode}  R{lsu.associated_reservation_station.dest_reg}, R{lsu.associated_reservation_station.src_reg1}, R{lsu.associated_reservation_station.src_reg2}")
+            print(f"    Instruction Completed in LSU {k}: {lsu.associated_reservation_station.instruction_count}: {lsu.associated_reservation_station.instruction_opcode}  R{lsu.associated_reservation_station.dest_reg}, R{lsu.associated_reservation_station.src_reg1}, R{lsu.associated_reservation_station.src_reg2}")
+            common_data_bus.append(lsu.associated_reservation_station)
+            lsu.associated_reservation_station = 0
+            lsu.busy = 0
+            lsu.current_cycles_spent_executing = 0
 
+        elif (lsu.busy == 1):
+
+            lsu.current_cycles_spent_executing += 1
 
         k += 1
 
-    ## ------------------------------------------------------------------------------------------------------
 
-    # Now, we have all the completed instructions on our CDB. Iterate through them all, and then update
+    ## Now, we have all the completed instructions broadcasting on the CDB. Iterate through them all, and then update
     # the reservation stations currently in the scheduling unit and the register file.
 
     instructions_completed = len(common_data_bus)
@@ -163,42 +180,33 @@ def stage_exec():
 
     for reservation_station_cdb in common_data_bus:
 
-        ## TO-DO: Update any Registers -----------------------------------------------------------------------
-
-        # If it was a write instruction (i.e. not a STORE), then we'll need to make sure its dest_reg's ready bit
-        # is updated. Loop through all the registers in the register file. If the reservation station's dest_reg_tag matches
+        # Loop through all the registers in the register file. If the reservation station's dest_reg_tag matches
         # that register's tag, then set the register's ready_bit to 1, as we have successfully written to the register!
 
         if (reservation_station_cdb.instruction_opcode != "STORE"):
-
             for register in register_file:
-
-
-                num = register.number
-                print(f"    Updating Reg {num} to ready")
-
-
-
-        ## TO-DO: Update the Scheduling Unit ------------------------------------------------------------------
+                if (reservation_station_cdb.dest_reg_tag == register.tag):
+                    num = register.number
+                    print(f"    Updating Reg {num} to ready")
+                    register.ready_bit = 1
 
         # Loop through all the reservation_stations in the scheduling unit. If the scheduling unit's R.S. has a matching
         # src_reg1_tag or src_reg2_tag, then update it.
 
         for reservation_station_sched in scheduling_unit:
 
+            if (reservation_station_cdb.dest_reg_tag == reservation_station_sched.src_reg1_tag):
+                print(f"    Updating Scheduling Unit: Readying SRC Register 1 for Instruction {reservation_station_sched.instruction_count}: {reservation_station_sched.instruction_opcode} R{reservation_station_sched.dest_reg}, R{reservation_station_sched.src_reg1}, R{reservation_station_sched.src_reg2}")
+                reservation_station_sched.src_reg1_ready_bit = 1
 
-            print(f"    Updating Scheduling Unit: Readying SRC Register 1 for Instruction {reservation_station_sched.instruction_count}: {reservation_station_sched.instruction_opcode} R{reservation_station_sched.dest_reg}, R{reservation_station_sched.src_reg1}, R{reservation_station_sched.src_reg2}")
+            if (reservation_station_sched.instruction_opcode != "LOAD"):
+                if (reservation_station_cdb.dest_reg_tag == reservation_station_sched.src_reg2_tag):
+                    print(f"    Updating Scheduling Unit: Readying SRC Register 2 for Instruction {reservation_station_sched.instruction_count}: {reservation_station_sched.instruction_opcode} R{reservation_station_sched.dest_reg}, R{reservation_station_sched.src_reg1}, R{reservation_station_sched.src_reg2}")
+                    reservation_station_sched.src_reg2_ready_bit = 1
 
-
-            print(f"    Updating Scheduling Unit: Readying SRC Register 2 for Instruction {reservation_station_sched.instruction_count}: {reservation_station_sched.instruction_opcode} R{reservation_station_sched.dest_reg}, R{reservation_station_sched.src_reg1}, R{reservation_station_sched.src_reg2}")
-
-
-
-        ## -----------------------------------------------------------------------------------------------------
 
     print(f"    Stage Exec Completed: {instructions_completed} instructions were completed!")
     return instructions_completed
-
 
 
 ##################################################################################################################################
@@ -225,76 +233,124 @@ def stage_fire():
 
     print("Stage Fire:")
 
+    instructions_fired = 0
 
-    ## TO-DO: Find Fireable Instructions --------------------------------------------------------------------
+    # We'll track all the reservation_stations ready to fire in arrays. Loop through the scheduling unit and add any
+    # instructions ready to fire to these arrays
 
-    # We'll first need to see which reservation_stations in the scheduling unit are ready to fire. We can do
-    # this by iterating through the scheduling unit and analyzing the "busy" bits of the source registers!
-    # If all of a reservation station's source registers' busy bit(s) are 1, then they are ready to fire!
+    ready_to_fire_alu_res_stations = []
+    ready_to_fire_mul_res_stations = []
+    ready_to_fire_lsu_res_stations = []
 
     for reservation_station in scheduling_unit:
 
+        if (reservation_station.instruction_opcode == "ADD" or reservation_station.instruction_opcode == "SUB"):
 
-        print(f"    Ready to fire {reservation_station.instruction_count}: {reservation_station.instruction_opcode} R{reservation_station.dest_reg}, R{reservation_station.src_reg1}, R{reservation_station.src_reg2} ")
+            if (reservation_station.src_reg1_ready_bit == 1 and reservation_station.src_reg2_ready_bit == 1):
+                print(f"    Ready to fire {reservation_station.instruction_count}: {reservation_station.instruction_opcode} R{reservation_station.dest_reg}, R{reservation_station.src_reg1}, R{reservation_station.src_reg2} ")
+                ready_to_fire_alu_res_stations.append(reservation_station)
 
+        if (reservation_station.instruction_opcode == "MUL"):
 
+            if (reservation_station.src_reg1_ready_bit == 1 and reservation_station.src_reg2_ready_bit == 1):
+                print(f"    Ready to fire {reservation_station.instruction_count}: {reservation_station.instruction_opcode} R{reservation_station.dest_reg}, R{reservation_station.src_reg1}, R{reservation_station.src_reg2} ")
+                ready_to_fire_mul_res_stations.append(reservation_station)
 
-    ## TO-DO: Fire Instructions -----------------------------------------------------------------------------
+        if (reservation_station.instruction_opcode == "LOAD"):
+
+            if (reservation_station.src_reg1_ready_bit == 1):
+                print(f"    Ready to fire {reservation_station.instruction_count}: {reservation_station.instruction_opcode} R{reservation_station.dest_reg}, R{reservation_station.src_reg1}, R{reservation_station.src_reg2} ")
+                ready_to_fire_lsu_res_stations.append(reservation_station)
+
+        if (reservation_station.instruction_opcode == "STORE"):
+
+            if (reservation_station.src_reg1_ready_bit == 1 and reservation_station.src_reg2_ready_bit == 1):
+                print(f"    Ready to fire {reservation_station.instruction_count}: {reservation_station.instruction_opcode} R{reservation_station.dest_reg}, R{reservation_station.src_reg1}, R{reservation_station.src_reg2} ")
+                ready_to_fire_lsu_res_stations.append(reservation_station)
 
     # Now that we have gathered which reservation stations are ready to be fired, we'll attempt to fire them.
-    # Once fired, remove the reservation_station from the scheduling unit. REMEMBER that if two instructions
-    # are both available to fire, choose the one that sequentially came first (i.e. look at its "instruction_count"
-    # field!)
-
-    instructions_fired = 0
-
-
-    print("    Stage Fire Completed: No instructions were ready to fire!")
-    print(" ")
-    return
 
     # Iterate through all our alu functional units. If any of them are free (busy == 0), then select a reservation
     # station from the ready_to_fire_alu_res_station list. Then, fire it on the function unit by setting its
     # associated_reservation_station, busy to 1, cycle_time to 1, and current_cycles_spent_executing to 1
 
-    reservation_station_to_fire = None
+    if (len(ready_to_fire_alu_res_stations) == len(ready_to_fire_mul_res_stations) == len(ready_to_fire_lsu_res_stations) == 0):
+        print("    Stage Fire Completed: No instructions were ready to fire!")
+        print(" ")
+        return
 
     i = 0
+    while (ready_to_fire_alu_res_stations and i < len(alu_functional_units)):
 
-    print(f"    Firing Instruction to ALU {i}: {reservation_station_to_fire.instruction_count}: {reservation_station_to_fire.instruction_opcode} R{reservation_station_to_fire.dest_reg}, R{reservation_station_to_fire.src_reg1}, R{reservation_station_to_fire.src_reg2} ")
-    instructions_fired += 1
+        if (alu_functional_units[i].busy == 0):
+
+            index = find_index_of_reservation_station_with_lowest_instruction_count(ready_to_fire_alu_res_stations)
+            reservation_station_to_fire = copy.deepcopy(ready_to_fire_alu_res_stations[index])
+            print(f"    Firing Instruction to ALU {i}: {reservation_station_to_fire.instruction_count}: {reservation_station_to_fire.instruction_opcode} R{reservation_station_to_fire.dest_reg}, R{reservation_station_to_fire.src_reg1}, R{reservation_station_to_fire.src_reg2} ")
+            instructions_fired += 1
+            remove_reservation_station_from_scheduling_unit(ready_to_fire_alu_res_stations[index])
+
+            alu_functional_units[i].associated_reservation_station = reservation_station_to_fire
+            alu_functional_units[i].busy = 1
+            alu_functional_units[i].cycle_time = 1
+            alu_functional_units[i].current_cycles_spent_executing = 1
+            ready_to_fire_alu_res_stations.pop(index)
+
+
+        i += 1
 
     # Iterate through all our mul functional units. If any of them are free (busy == 0), then select a reservation
     # station from the ready_to_fire_mul_res_station list. Then, fire it on the function unit by setting its
     # associated_reservation_station, busy to 1, cycle_time to 3, and current_cycles_spent_executing to 1
-
-    reservation_station_to_fire = None
-
     j = 0
+    while (ready_to_fire_mul_res_stations and j < len(mul_functional_units)):
 
-    print(f"    Firing Instruction to MUL {j}: {reservation_station_to_fire.instruction_count}: {reservation_station_to_fire.instruction_opcode} R{reservation_station_to_fire.dest_reg}, R{reservation_station_to_fire.src_reg1}, R{reservation_station_to_fire.src_reg2} ")
-    instructions_fired += 1
+        if (mul_functional_units[j].busy == 0):
 
+            index = find_index_of_reservation_station_with_lowest_instruction_count(ready_to_fire_mul_res_stations)
+            reservation_station_to_fire = copy.deepcopy(ready_to_fire_mul_res_stations[index])
+            print(f"    Firing Instruction to MUL {j}: {reservation_station_to_fire.instruction_count}: {reservation_station_to_fire.instruction_opcode} R{reservation_station_to_fire.dest_reg}, R{reservation_station_to_fire.src_reg1}, R{reservation_station_to_fire.src_reg2} ")
+            instructions_fired += 1
+            remove_reservation_station_from_scheduling_unit(ready_to_fire_mul_res_stations[index])
 
-    # Iterate through all our lsu functional units. If any of them are free (busy == 0), then select a reservation
-    # station from the ready_to_fire_mul_res_station list. Then, fire it on the function unit, and remove it
-    # from the scheduling unit. REMEMBER: If its a load instruction, it should spend 4 cycles in the lsu unit. If
-    # its a store instruction, it only spends 2.
+            mul_functional_units[j].associated_reservation_station = reservation_station_to_fire
+            mul_functional_units[j].busy = 1
+            mul_functional_units[j].cycle_time = 3
+            mul_functional_units[j].current_cycles_spent_executing = 1
+            ready_to_fire_mul_res_stations.pop(index)
 
-    reservation_station_to_fire = None
+        j += 1
 
+    # Iterate through all our mul functional units. If any of them are free (busy == 0), then select a reservation
+    # station from the ready_to_fire_mul_res_station list. Then, fire it on the function unit! If its a load instruction,
+    # it should spend 4 cycles in the lsu unit. If its a store instruction, it only spends 2.
     k = 0
+    while (ready_to_fire_lsu_res_stations and k < len(lsu_functional_units)):
 
-    print(f"    Firing Instruction to LSU {k}: {reservation_station_to_fire.instruction_count}: {reservation_station_to_fire.instruction_opcode}, R{reservation_station_to_fire.dest_reg}, R{reservation_station_to_fire.src_reg1}, R{reservation_station_to_fire.src_reg2} ")
-    instructions_fired += 1
+        if (lsu_functional_units[k].busy == 0):
 
+            index = find_index_of_reservation_station_with_lowest_instruction_count(ready_to_fire_lsu_res_stations)
+            reservation_station_to_fire = copy.deepcopy(ready_to_fire_lsu_res_stations[index])
+            print(f"    Firing Instruction to LSU {k}: {reservation_station_to_fire.instruction_count}: {reservation_station_to_fire.instruction_opcode}, R{reservation_station_to_fire.dest_reg}, R{reservation_station_to_fire.src_reg1}, R{reservation_station_to_fire.src_reg2} ")
+            instructions_fired += 1
+            remove_reservation_station_from_scheduling_unit(ready_to_fire_lsu_res_stations[index])
 
-    ## ------------------------------------------------------------------------------------------------------
+            lsu_functional_units[k].associated_reservation_station = reservation_station_to_fire
+            lsu_functional_units[k].busy = 1
+            ready_to_fire_lsu_res_stations.pop(index)
+
+            if (reservation_station_to_fire.instruction_opcode == "LOAD"):
+                lsu_functional_units[k].cycle_time = 4
+                lsu_functional_units[k].current_cycles_spent_executing = 1
+
+            if (reservation_station_to_fire.instruction_opcode == "STORE"):
+                lsu_functional_units[k].cycle_time = 2
+                lsu_functional_units[k].current_cycles_spent_executing = 1
+
+        k += 1
 
     print(f"    Stage Fire Completed: {instructions_fired} instructions were fired!")
     print(" ")
-
-
 
 ##################################################################################################################################
 # STAGE 1: Dispatch
@@ -302,9 +358,9 @@ def stage_fire():
 # This stage is responsible for adding incoming instructions to the scheduling unit.
 
 # The driver will give this function an list of instruction objects to add to the unit. If the scheduling unit
-# is totally full, then we will not add any to our scheduling unit. If we have room in our scheduling unit,
-# we'll create a reservation station for as many instructions as we can take in. We'll also update the register file,
-# and then add our new reservation stations to the scheduling unit.
+# is totally full, then we will not add it to our scheduling unit. If we have room in our scheduling unit,
+# we'll create a reservation station for the instruction, update the register file, and then add our
+# new reservation station to the scheduling queue.
 ##################################################################################################################################
 
 def stage_dispatch(instructions):
@@ -319,62 +375,71 @@ def stage_dispatch(instructions):
 
     print("Stage Dispatch:")
 
-
-    ## TO-DO: Check if zero instructions are available ------------------------------------------------------
-
-    # If there are no instructions that are availabe to fire, then simply return 0. Note that every time we return,
-    # We'll also print the contents of the scheduling unit by calling print_scheduling_unit()
-
-    print_scheduling_unit()
-    print(f"    Stage Dispatch Completed. No more instructions were added to the Scheduling Unit")
-    print(" ")
-    return 0
-
-    ## TO-DO: Add instructions to Scheduling Unit -----------------------------------------------------------
-
-    # We'll loop through the list of incoming instructions and see how many we can add. If our scheduling unit has
-    # reached max capacity, then we'll return the number of instructions added. If not, we'll keep adding.
+    if (len(instructions) == 0):
+            print_scheduling_unit()
+            print(f"    Stage Dispatch Completed. No more instructions were added to the Scheduling Unit")
+            print(" ")
+            return 0
 
     instructions_added = 0
-
     for instruction in instructions:
 
-        # Each instruction added will have its own reservation station completed. This means copying over elements such as the
-        # opcode, dest_reg, and source registers. In the case of STORE, there is no dest reg. In this instance, simply set the
-        # reservation station's dest_reg field as -1. Likewise, in the case of LOAD where there is no 2nd source register, set
-        # the reservation station's src_reg2 field as -1.
+        if (len(scheduling_unit) >= scheduling_unit_max_size):
+            print_scheduling_unit()
+            print(f"    Stage Dispatch Completed. {instructions_added} instructions were added to the Scheduling Unit")
+            print(" ")
+            return instructions_added
 
-        print_scheduling_unit()
-        print(f"    Stage Dispatch Completed. {instructions_added} instructions were added to the Scheduling Unit")
-        print(" ")
-        return instructions_added
+        instruction_opcode = instruction.opcode
+        instruction_count = instruction.count
 
-        # How do you set the src1_ready, src1_tag, src2_ready, and src2_tag fields? We'll need to look in the register file to see
-        # what these are. Simply put, we'll just copy them from the register file. Loop through the register file to determine whether or
-        # not the src1_reg is ready (if it is, yay! if not, then just copy its tag and set its ready bit to zero) and src2_reg is ready
-        # (same thing: if its ready, hurray! if not, copy its tag and set its ready bit to zero).
+        dest_reg = instruction.dest_reg
+        if (dest_reg != -1):
+            dest_reg_tag = generate_unique_tag()
+        else:
+            dest_reg_tag = -1
+
+        src_reg1 = instruction.src_reg1
+        src_reg1_ready_bit = -1
+        src_reg1_tag = -1
+
+        src_reg2 = instruction.src_reg2
+        src_reg2_ready_bit = -1
+        src_reg2_tag = -1
+
+        # Loop through the register file to determine whether or not the src1_reg is ready (if it is, yay! if not, then just copy its tag and set its
+        # ready bit to zero) and src2_reg is ready (same thing: if its ready, hurray! if not, copy its tag and set its ready bit to zero).
 
         for register in register_file:
+            if (register.number == src_reg1):
+                if (register.ready_bit == 1):
+                    src_reg1_ready_bit = 1
+                else:
+                    src_reg1_ready_bit = 0
+                    src_reg1_tag = register.tag
 
+            if (register.number == src_reg2):
+                if (register.ready_bit == 1):
+                    src_reg2_ready_bit = 1
+                else:
+                    src_reg2_ready_bit = 0
+                    src_reg2_tag = register.tag
 
+        # Then, if the instruction involves writing data to a register, update the register file once again to set the dest_reg's ready bit to 0.
 
+        if (dest_reg != -1):
+            for register in register_file:
+                if (register.number == dest_reg):
+                    register.ready_bit = 0
+                    register.tag = dest_reg_tag
 
-        # Next, we'll need to iterate through the register file one more time, this time to set the dest_reg's ready bit to 0 if it is a write
-        # instruction (i.e. an ADD, MUL, SUB, or LOAD). So once again, loop through the register file to set the dest_reg's ready bit to 0.
+        # We can now finally create the reservation station, and then append it to our scheduling unit!
 
-        for register in register_file:
-
-
-
-
-        # Make sure to add the newly created reservation station into the scheduling unit!
-
-
+        reservation_station = ReservationStation(instruction_opcode, instruction_count, dest_reg, dest_reg_tag, src_reg1, src_reg1_ready_bit, src_reg1_tag, src_reg2, src_reg2_ready_bit, src_reg2_tag)
         print(f"    Adding Instruction to Scheduling Unit: {reservation_station.instruction_count}: {reservation_station.instruction_opcode} R{reservation_station.dest_reg}, R{reservation_station.src_reg1}, R{reservation_station.src_reg2} ")
+        scheduling_unit.append(reservation_station)
         instructions_added += 1
 
-
-        ## ------------------------------------------------------------------------------------------------------
 
     print_scheduling_unit()
     print(f"    Stage Dispatch Completed. {instructions_added} instructions were added to the Scheduling Unit")
@@ -387,7 +452,6 @@ def stage_dispatch(instructions):
 # Helper Functions
 #
 # These are helper functions that you may use to complete your implementation.
-# We recommend that you dont edit any of these.
 ##################################################################################################################################
 
 
@@ -408,6 +472,7 @@ def find_index_of_reservation_station_with_lowest_instruction_count(rs_list):
 
 # Function that removes a given reservation station from the scheduling unit.
 def remove_reservation_station_from_scheduling_unit(reservation_station):
+
 
     ic = reservation_station.instruction_count
     opcode = reservation_station.instruction_opcode
@@ -461,11 +526,13 @@ def print_scheduling_unit():
 
 
 
+
+
+
 ##################################################################################################################################
 # Initialization Function
 #
 # This function initializes and configures the Tomasulo Simulator
-# DO NOT EDIT
 ##################################################################################################################################
 
 def initialize_tomasulo(num_of_alus, num_of_muls, num_of_lsus, num_of_regs, scheduling_unit_size):
