@@ -1,0 +1,6 @@
+ADD R1, R2, R3
+MUL R3, R1, R4 ; example comment
+STORE R1, R2
+LOAD R5, R6
+SUB R1, R2, R5
+this is a bad instruction

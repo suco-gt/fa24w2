@@ -8,6 +8,7 @@ from typing import List
 import tomasulo
 from instruction import Instruction
 
+
 program_instructions = []
 
 def decode_file(file_path: str) -> List[Instruction]:
@@ -43,8 +44,6 @@ def decode_file(file_path: str) -> List[Instruction]:
             program_instructions.append(instruction)
 
 
-
-
 def single_cycle_processor(i):
     print(f"=========================================== C  Y  C  L  E  {i} ============================================")
     global program_instructions
@@ -58,11 +57,14 @@ def single_cycle_processor(i):
     return num_completed
 
 
-
 def main():
+       
     global program_instructions
-    filename = "program_basic.txt"
-    program_instructions = []
+    file_path = "program_basic.txt"
+    decode_file(file_path)
+    for instruction in program_instructions:
+        print(instruction)
+     
     print(f"Starting Tomasulo Simulation! ")
     print(" ")
     print(" ")
@@ -84,8 +86,6 @@ def main():
         instructions_completed_in_cycle = single_cycle_processor(i)
         total_instructions_completed += instructions_completed_in_cycle
         i += 1
-
-
-
+       
 if __name__ == "__main__":
     main()
