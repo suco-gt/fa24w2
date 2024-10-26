@@ -1,0 +1,251 @@
+Processor Configuration:
+Number of ALUs: 1
+Number of MULs: 1
+Number of LSUs: 1
+Scheduling Unit Size: 4
+Number of Registers: 4
+
+Starting Tomasulo Simulation!
+
+
+=========================================== C  Y  C  L  E  1 ============================================
+Stage Exec:
+    Stage Exec Completed: 0 instructions were completed!
+
+Stage Fire:
+    Stage Fire Completed: No instructions were ready to fire!
+
+Stage Dispatch:
+    Adding Instruction to Scheduling Unit: 1: ADD R1, R2, R3
+    Adding Instruction to Scheduling Unit: 2: MUL R1, R0, R3
+    Adding Instruction to Scheduling Unit: 3: ADD R3, R2, R1
+    Adding Instruction to Scheduling Unit: 4: SUB R0, R0, R2
+    Scheduling Unit View:
+    -------------------------------------------------------------------------------------------
+    | R.S. # | Count | Opcode |  DR  | DR Tag | SRC1  | Ready |  Tag  | SRC2  | Ready |  Tag  |
+    -------------------------------------------------------------------------------------------
+    |   0    | 1     | ADD    | R1   | #20    | R2    | 1     | #-1   | R3    | 1     | #-1   |
+    |   1    | 2     | MUL    | R1   | #21    | R0    | 1     | #-1   | R3    | 1     | #-1   |
+    |   2    | 3     | ADD    | R3   | #22    | R2    | 1     | #-1   | R1    | 0     | #21   |
+    |   3    | 4     | SUB    | R0   | #23    | R0    | 1     | #-1   | R2    | 1     | #-1   |
+    Stage Dispatch Completed. 4 instructions were added to the Scheduling Unit
+
+=========================================== C  Y  C  L  E  2 ============================================
+Stage Exec:
+    Stage Exec Completed: 0 instructions were completed!
+
+Stage Fire:
+    Ready to fire 1: ADD R1, R2, R3
+    Ready to fire 2: MUL R1, R0, R3
+    Ready to fire 4: SUB R0, R0, R2
+    Firing Instruction to ALU 0: 1: ADD R1, R2, R3
+    Instruction 1: ADD has been removed from the scheduling unit
+    Firing Instruction to MUL 0: 2: MUL R1, R0, R3
+    Instruction 2: MUL has been removed from the scheduling unit
+    Stage Fire Completed: 2 instructions were fired!
+
+Stage Dispatch:
+    Adding Instruction to Scheduling Unit: 5: STORE R-1, R0, R1
+    Adding Instruction to Scheduling Unit: 6: LOAD R1, R4, R-1
+    Scheduling Unit View:
+    -------------------------------------------------------------------------------------------
+    | R.S. # | Count | Opcode |  DR  | DR Tag | SRC1  | Ready |  Tag  | SRC2  | Ready |  Tag  |
+    -------------------------------------------------------------------------------------------
+    |   0    | 3     | ADD    | R3   | #22    | R2    | 1     | #-1   | R1    | 0     | #21   |
+    |   1    | 4     | SUB    | R0   | #23    | R0    | 1     | #-1   | R2    | 1     | #-1   |
+    |   2    | 5     | STORE  | R-1  | #-1    | R0    | 0     | #23   | R1    | 0     | #21   |
+    |   3    | 6     | LOAD   | R1   | #24    | R4    | -1    | #-1   | R-1   | -1    | #-1   |
+    Stage Dispatch Completed. 2 instructions were added to the Scheduling Unit
+
+=========================================== C  Y  C  L  E  3 ============================================
+Stage Exec:
+    Instruction Completed in ALU 0: 1: ADD  R1, R2, R3
+    Stage Exec Completed: 1 instructions were completed!
+Stage Fire:
+    Ready to fire 4: SUB R0, R0, R2
+    Firing Instruction to ALU 0: 4: SUB R0, R0, R2
+    Instruction 4: SUB has been removed from the scheduling unit
+    Stage Fire Completed: 1 instructions were fired!
+
+Stage Dispatch:
+    Adding Instruction to Scheduling Unit: 7: MUL R1, R0, R3
+    Scheduling Unit View:
+    -------------------------------------------------------------------------------------------
+    | R.S. # | Count | Opcode |  DR  | DR Tag | SRC1  | Ready |  Tag  | SRC2  | Ready |  Tag  |
+    -------------------------------------------------------------------------------------------
+    |   0    | 3     | ADD    | R3   | #22    | R2    | 1     | #-1   | R1    | 0     | #21   |
+    |   1    | 5     | STORE  | R-1  | #-1    | R0    | 0     | #23   | R1    | 0     | #21   |
+    |   2    | 6     | LOAD   | R1   | #24    | R4    | -1    | #-1   | R-1   | -1    | #-1   |
+    |   3    | 7     | MUL    | R1   | #25    | R0    | 0     | #23   | R3    | 0     | #22   |
+    Stage Dispatch Completed. 1 instructions were added to the Scheduling Unit
+
+=========================================== C  Y  C  L  E  4 ============================================
+Stage Exec:
+    Instruction Completed in ALU 0: 4: SUB  R0, R0, R2
+    Updating Reg 0 to ready
+    Updating Scheduling Unit: Readying SRC Register 1 for Instruction 5: STORE R-1, R0, R1
+    Updating Scheduling Unit: Readying SRC Register 1 for Instruction 7: MUL R1, R0, R3
+    Stage Exec Completed: 1 instructions were completed!
+Stage Fire:
+    Stage Fire Completed: No instructions were ready to fire!
+
+Stage Dispatch:
+    Scheduling Unit View:
+    -------------------------------------------------------------------------------------------
+    | R.S. # | Count | Opcode |  DR  | DR Tag | SRC1  | Ready |  Tag  | SRC2  | Ready |  Tag  |
+    -------------------------------------------------------------------------------------------
+    |   0    | 3     | ADD    | R3   | #22    | R2    | 1     | #-1   | R1    | 0     | #21   |
+    |   1    | 5     | STORE  | R-1  | #-1    | R0    | 1     | #23   | R1    | 0     | #21   |
+    |   2    | 6     | LOAD   | R1   | #24    | R4    | -1    | #-1   | R-1   | -1    | #-1   |
+    |   3    | 7     | MUL    | R1   | #25    | R0    | 1     | #23   | R3    | 0     | #22   |
+    Stage Dispatch Completed. 0 instructions were added to the Scheduling Unit
+
+=========================================== C  Y  C  L  E  5 ============================================
+Stage Exec:
+    Instruction Completed in MUL 0: 2: MUL  R1, R0, R3
+    Updating Scheduling Unit: Readying SRC Register 2 for Instruction 3: ADD R3, R2, R1
+    Updating Scheduling Unit: Readying SRC Register 2 for Instruction 5: STORE R-1, R0, R1
+    Stage Exec Completed: 1 instructions were completed!
+Stage Fire:
+    Ready to fire 3: ADD R3, R2, R1
+    Ready to fire 5: STORE R-1, R0, R1
+    Firing Instruction to ALU 0: 3: ADD R3, R2, R1
+    Instruction 3: ADD has been removed from the scheduling unit
+    Firing Instruction to LSU 0: 5: STORE, R-1, R0, R1
+    Instruction 5: STORE has been removed from the scheduling unit
+    Stage Fire Completed: 2 instructions were fired!
+
+Stage Dispatch:
+    Adding Instruction to Scheduling Unit: 8: ADD R0, R1, R2
+    Adding Instruction to Scheduling Unit: 9: SUB R3, R1, R2
+    Scheduling Unit View:
+    -------------------------------------------------------------------------------------------
+    | R.S. # | Count | Opcode |  DR  | DR Tag | SRC1  | Ready |  Tag  | SRC2  | Ready |  Tag  |
+    -------------------------------------------------------------------------------------------
+    |   0    | 6     | LOAD   | R1   | #24    | R4    | -1    | #-1   | R-1   | -1    | #-1   |
+    |   1    | 7     | MUL    | R1   | #25    | R0    | 1     | #23   | R3    | 0     | #22   |
+    |   2    | 8     | ADD    | R0   | #26    | R1    | 0     | #25   | R2    | 1     | #-1   |
+    |   3    | 9     | SUB    | R3   | #27    | R1    | 0     | #25   | R2    | 1     | #-1   |
+    Stage Dispatch Completed. 2 instructions were added to the Scheduling Unit
+
+=========================================== C  Y  C  L  E  6 ============================================
+Stage Exec:
+    Instruction Completed in ALU 0: 3: ADD  R3, R2, R1
+    Updating Scheduling Unit: Readying SRC Register 2 for Instruction 7: MUL R1, R0, R3
+    Stage Exec Completed: 1 instructions were completed!
+Stage Fire:
+    Ready to fire 7: MUL R1, R0, R3
+    Firing Instruction to MUL 0: 7: MUL R1, R0, R3
+    Instruction 7: MUL has been removed from the scheduling unit
+    Stage Fire Completed: 1 instructions were fired!
+
+Stage Dispatch:
+    Scheduling Unit View:
+    -------------------------------------------------------------------------------------------
+    | R.S. # | Count | Opcode |  DR  | DR Tag | SRC1  | Ready |  Tag  | SRC2  | Ready |  Tag  |
+    -------------------------------------------------------------------------------------------
+    |   0    | 6     | LOAD   | R1   | #24    | R4    | -1    | #-1   | R-1   | -1    | #-1   |
+    |   1    | 8     | ADD    | R0   | #26    | R1    | 0     | #25   | R2    | 1     | #-1   |
+    |   2    | 9     | SUB    | R3   | #27    | R1    | 0     | #25   | R2    | 1     | #-1   |
+    Stage Dispatch Completed. No more instructions were added to the Scheduling Unit
+
+=========================================== C  Y  C  L  E  7 ============================================
+Stage Exec:
+    Instruction Completed in LSU 0: 5: STORE  R-1, R0, R1
+    Updating Scheduling Unit: Readying SRC Register 1 for Instruction 6: LOAD R1, R4, R-1
+    Updating Scheduling Unit: Readying SRC Register 2 for Instruction 8: ADD R0, R1, R2
+    Updating Scheduling Unit: Readying SRC Register 2 for Instruction 9: SUB R3, R1, R2
+    Stage Exec Completed: 1 instructions were completed!
+Stage Fire:
+    Ready to fire 6: LOAD R1, R4, R-1
+    Firing Instruction to LSU 0: 6: LOAD, R1, R4, R-1
+    Instruction 6: LOAD has been removed from the scheduling unit
+    Stage Fire Completed: 1 instructions were fired!
+
+Stage Dispatch:
+    Scheduling Unit View:
+    -------------------------------------------------------------------------------------------
+    | R.S. # | Count | Opcode |  DR  | DR Tag | SRC1  | Ready |  Tag  | SRC2  | Ready |  Tag  |
+    -------------------------------------------------------------------------------------------
+    |   0    | 8     | ADD    | R0   | #26    | R1    | 0     | #25   | R2    | 1     | #-1   |
+    |   1    | 9     | SUB    | R3   | #27    | R1    | 0     | #25   | R2    | 1     | #-1   |
+    Stage Dispatch Completed. No more instructions were added to the Scheduling Unit
+
+=========================================== C  Y  C  L  E  8 ============================================
+Stage Exec:
+    Stage Exec Completed: 0 instructions were completed!
+
+Stage Fire:
+    Stage Fire Completed: No instructions were ready to fire!
+
+Stage Dispatch:
+    Scheduling Unit View:
+    -------------------------------------------------------------------------------------------
+    | R.S. # | Count | Opcode |  DR  | DR Tag | SRC1  | Ready |  Tag  | SRC2  | Ready |  Tag  |
+    -------------------------------------------------------------------------------------------
+    |   0    | 8     | ADD    | R0   | #26    | R1    | 0     | #25   | R2    | 1     | #-1   |
+    |   1    | 9     | SUB    | R3   | #27    | R1    | 0     | #25   | R2    | 1     | #-1   |
+    Stage Dispatch Completed. No more instructions were added to the Scheduling Unit
+
+=========================================== C  Y  C  L  E  9 ============================================
+Stage Exec:
+    Instruction Completed in MUL 0: 7: MUL  R1, R0, R3
+    Updating Reg 1 to ready
+    Updating Scheduling Unit: Readying SRC Register 1 for Instruction 8: ADD R0, R1, R2
+    Updating Scheduling Unit: Readying SRC Register 1 for Instruction 9: SUB R3, R1, R2
+    Stage Exec Completed: 1 instructions were completed!
+Stage Fire:
+    Ready to fire 8: ADD R0, R1, R2
+    Ready to fire 9: SUB R3, R1, R2
+    Firing Instruction to ALU 0: 8: ADD R0, R1, R2
+    Instruction 8: ADD has been removed from the scheduling unit
+    Stage Fire Completed: 1 instructions were fired!
+
+Stage Dispatch:
+    Scheduling Unit View:
+    -------------------------------------------------------------------------------------------
+    | R.S. # | Count | Opcode |  DR  | DR Tag | SRC1  | Ready |  Tag  | SRC2  | Ready |  Tag  |
+    -------------------------------------------------------------------------------------------
+    |   0    | 9     | SUB    | R3   | #27    | R1    | 1     | #25   | R2    | 1     | #-1   |
+    Stage Dispatch Completed. No more instructions were added to the Scheduling Unit
+
+=========================================== C  Y  C  L  E  10 ============================================
+Stage Exec:
+    Instruction Completed in ALU 0: 8: ADD  R0, R1, R2
+    Updating Reg 0 to ready
+    Stage Exec Completed: 1 instructions were completed!
+Stage Fire:
+    Ready to fire 9: SUB R3, R1, R2
+    Firing Instruction to ALU 0: 9: SUB R3, R1, R2
+    Instruction 9: SUB has been removed from the scheduling unit
+    Stage Fire Completed: 1 instructions were fired!
+
+Stage Dispatch:
+    Scheduling Unit View:
+    -------------------------------------------------------------------------------------------
+    | R.S. # | Count | Opcode |  DR  | DR Tag | SRC1  | Ready |  Tag  | SRC2  | Ready |  Tag  |
+    -------------------------------------------------------------------------------------------
+    Stage Dispatch Completed. No more instructions were added to the Scheduling Unit
+
+=========================================== C  Y  C  L  E  11 ============================================
+Stage Exec:
+    Instruction Completed in ALU 0: 9: SUB  R3, R1, R2
+    Instruction Completed in LSU 0: 6: LOAD  R1, R4, R-1
+    Updating Reg 3 to ready
+    Stage Exec Completed: 2 instructions were completed!
+Stage Fire:
+    Stage Fire Completed: No instructions were ready to fire!
+
+Stage Dispatch:
+    Scheduling Unit View:
+    -------------------------------------------------------------------------------------------
+    | R.S. # | Count | Opcode |  DR  | DR Tag | SRC1  | Ready |  Tag  | SRC2  | Ready |  Tag  |
+    -------------------------------------------------------------------------------------------
+    Stage Dispatch Completed. No more instructions were added to the Scheduling Unit
+
+===========================================================================================================
+
+Program: program_medium.txt
+Total Instructions: 9
+Total Cycles: 11
+IPC: 0.8181818181818182

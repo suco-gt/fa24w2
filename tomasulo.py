@@ -98,6 +98,7 @@ def stage_exec():
 
     ## Progress through ALUs
 
+    i = 0
     for alu in alu_functional_units:
 
         # If an ALU is currently busy (i.e. it has an associated reservation station), check if the number of
@@ -106,14 +107,17 @@ def stage_exec():
 
         if (alu.busy == 1 and (alu.cycle_time == alu.current_cycles_spent_executing)):
 
-            print(f"    Instruction Completed in ALU {alu.associated_reservation_station.instruction_count}: {alu.associated_reservation_station.instruction_opcode}  R{alu.associated_reservation_station.dest_reg}, R{alu.associated_reservation_station.src_reg1}, R{alu.associated_reservation_station.src_reg2}")
+            print(f"    Instruction Completed in ALU {i}: {alu.associated_reservation_station.instruction_count}: {alu.associated_reservation_station.instruction_opcode}  R{alu.associated_reservation_station.dest_reg}, R{alu.associated_reservation_station.src_reg1}, R{alu.associated_reservation_station.src_reg2}")
             common_data_bus.append(alu.associated_reservation_station)
             alu.associated_reservation_station = 0
             alu.busy = 0
             alu.current_cycles_spent_executing = 0
 
+        i += 1
+
     ## Progress through MULs
 
+    j = 0
     for mul in mul_functional_units:
 
         # If a MUL is currently busy (i.e. it has an associated reservation station), check if the number of
@@ -125,8 +129,8 @@ def stage_exec():
 
         if (mul.busy == 1 and (mul.cycle_time == mul.current_cycles_spent_executing)):
 
-            print(f"    Instruction Completed in MUL {mul.associated_reservation_station.instruction_count}: {mul.associated_reservation_station.instruction_opcode}  R{mul.associated_reservation_station.dest_reg}, R{mul.associated_reservation_station.src_reg1}, R{mul.associated_reservation_station.src_reg2}")
-            common_data_bus.append(alu.associated_reservation_station)
+            print(f"    Instruction Completed in MUL {j}: {mul.associated_reservation_station.instruction_count}: {mul.associated_reservation_station.instruction_opcode}  R{mul.associated_reservation_station.dest_reg}, R{mul.associated_reservation_station.src_reg1}, R{mul.associated_reservation_station.src_reg2}")
+            common_data_bus.append(mul.associated_reservation_station)
             mul.associated_reservation_station = 0
             mul.busy = 0
             mul.current_cycles_spent_executing = 0
@@ -135,8 +139,11 @@ def stage_exec():
 
             mul.current_cycles_spent_executing += 1
 
+        j += 1
+
     ## Progress through LSUs
 
+    k = 0
     for lsu in lsu_functional_units:
 
         # If an LSU is currently busy (i.e. it has an associated reservation station), check if the number of
@@ -148,7 +155,7 @@ def stage_exec():
 
         if (lsu.busy == 1 and (lsu.cycle_time == lsu.current_cycles_spent_executing)):
 
-            print(f"    Instruction Completed in LSU {lsu.associated_reservation_station.instruction_count}: {lsu.associated_reservation_station.instruction_opcode}  R{lsu.associated_reservation_station.dest_reg}, R{lsu.associated_reservation_station.src_reg1}, R{lsu.associated_reservation_station.src_reg2}")
+            print(f"    Instruction Completed in LSU {k}: {lsu.associated_reservation_station.instruction_count}: {lsu.associated_reservation_station.instruction_opcode}  R{lsu.associated_reservation_station.dest_reg}, R{lsu.associated_reservation_station.src_reg1}, R{lsu.associated_reservation_station.src_reg2}")
             common_data_bus.append(lsu.associated_reservation_station)
             lsu.associated_reservation_station = 0
             lsu.busy = 0
@@ -157,6 +164,8 @@ def stage_exec():
         elif (lsu.busy == 1):
 
             lsu.current_cycles_spent_executing += 1
+
+        k += 1
 
 
     ## Now, we have all the completed instructions broadcasting on the CDB. Iterate through them all, and then update
@@ -190,7 +199,7 @@ def stage_exec():
                 print(f"    Updating Scheduling Unit: Readying SRC Register 1 for Instruction {reservation_station_sched.instruction_count}: {reservation_station_sched.instruction_opcode} R{reservation_station_sched.dest_reg}, R{reservation_station_sched.src_reg1}, R{reservation_station_sched.src_reg2}")
                 reservation_station_sched.src_reg1_ready_bit = 1
 
-            if (reservation_station_cdb.instruction_opcode != "LOAD"):
+            if (reservation_station_sched.instruction_opcode != "LOAD"):
                 if (reservation_station_cdb.dest_reg_tag == reservation_station_sched.src_reg2_tag):
                     print(f"    Updating Scheduling Unit: Readying SRC Register 2 for Instruction {reservation_station_sched.instruction_count}: {reservation_station_sched.instruction_opcode} R{reservation_station_sched.dest_reg}, R{reservation_station_sched.src_reg1}, R{reservation_station_sched.src_reg2}")
                     reservation_station_sched.src_reg2_ready_bit = 1
@@ -300,7 +309,7 @@ def stage_fire():
 
             index = find_index_of_reservation_station_with_lowest_instruction_count(ready_to_fire_mul_res_stations)
             reservation_station_to_fire = copy.deepcopy(ready_to_fire_mul_res_stations[index])
-            print(f"Firing Instruction to MUL {j}: {reservation_station_to_fire.instruction_count}: {reservation_station_to_fire.instruction_opcode} R{reservation_station_to_fire.dest_reg}, R{reservation_station_to_fire.src_reg1}, R{reservation_station_to_fire.src_reg2} ")
+            print(f"    Firing Instruction to MUL {j}: {reservation_station_to_fire.instruction_count}: {reservation_station_to_fire.instruction_opcode} R{reservation_station_to_fire.dest_reg}, R{reservation_station_to_fire.src_reg1}, R{reservation_station_to_fire.src_reg2} ")
             instructions_fired += 1
             remove_reservation_station_from_scheduling_unit(ready_to_fire_mul_res_stations[index])
 

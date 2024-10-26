@@ -14,5 +14,5 @@ class Instruction:
         self.src_reg2 = src_reg2                               # Source register 2 (e.g., "R1", "R2", etc., or -1 if not applicable)
 
     def __repr__(self):
-        return (f"Instruction(type={self.opcode}, order={self.count}, "
+        return (f"Instruction(type={self.opcode}, count={self.count}, "
                 f"dest_reg={self.dest_reg}, src_reg1={self.src_reg1}, src_reg2={self.src_reg2})")
