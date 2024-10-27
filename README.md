@@ -1,12 +1,12 @@
 # Fall 2024 Workshop 2: CPU Architecture
 
-## SETUP INSTRUCTIONS
+## Setup Instructions
 
 You're welcome to copy and paste these files, but the easiest way is to clone this Github Repository. To do so, you must have Git installed on your computer. [Download the latest version here](https://git-scm.com/downloads). Simply open up a terminal in the location you want the project to go (we recommend making a separate folder), and then run `git clone https://github.com/suco-gt/fa24w2.git`, which will copy all the files automatically.
 
 This workshop involves using Python extensively. If you're a bit rusty, the [W3 Schools Manual](https://www.w3schools.com/python/) is an excellent resoruce to quickly browse. Please ensure that you have Python or Python3 downloaded on your computer, as you will need it to run the code. [Download the latest Python version here](https://www.python.org/downloads/). 
 
-## INTRODUCTION: `tomasulo.py`
+## Information on `tomasulo.py`
 
 In this workshop, we'll be implementing a CPU simulator, specifically one that simulates Tomasulo's algorithm. Our simulator will be implemented in the `tomasulo.py` file, where we'll implement three functions that define all the logic for our CPU. These three functions are `stage_dispatch`, `stage_fire`, and `stage_exec`. Our workshop will see us implementing these three functions, which collectively manage the 3 data structures/components involved in Tomasulo's algorithm: the scheduling unit, functional units, and the register file. 
 
@@ -23,7 +23,7 @@ def stage_dispatch():
   # Stage 1: Responsible for adding incoming instructions to the scheduling unit.
 
 ```
-### THE SCHEDULING UNIT
+### The Scheduling Unit
 The Scheduling Unit is our component/data structure that temporarily holds instructions that are waiting to be executed. You can think of it like almost like a complex "queue" for instructions that are waiting to fire. When instructions are ready to be executed, they will be "fired" to a functional unit that will handle their completion. 
 
 Each "entry" of the scheduling unit is called a reservation station. A reservation stations simply holds info about the instruction that's waiting to execute, such as it's opcode, it's source and destination registers, as well info about the current state of those registers. In our simulator, we define a reservation station as a class in `tomasulo.py`
@@ -58,7 +58,7 @@ The scheduling unit itself is just implemented as a standard list of these reser
 scheduling_unit = []
 scheduling_unit_max_size = 0
 ```
-### THE REGISTER FILE
+### The Register File
 Once again, our register file must contain both a `tag` field and `ready` bit field to track each register's current status in Tomasulo's algorithm. Like the scheduling unit and reservation stations, registers and register file are defined as a class and an array of `Register` objects in `tomasulo.py`
 ```
 # RegisterFile
@@ -74,7 +74,7 @@ register_file = []
 ```
 You are able to define how many registers you want to have in the `driver.py` file. We'll get to that eventually.
 
-### FUNCTIONAL UNITS
+### Functional Units
 We have 3 types of functional units in our simulator: Arithmatic Logic Units (ALUs), Multiplication Units (MULs), and Load-Store Units (LSUs). ALUs are responsible for performing the mathematical operations required to execute ADD and SUB instructions. MUL units are required to execute MUL instructions. Lastly, LSUs can access memory and execute LOAD and STORE instructions. Each unit is defined in an overall `FunctionalUnit` class in tomasulo.py
 ```
 # FunctionalUnit
@@ -104,12 +104,12 @@ mul_functional_units = []
 lsu_functional_units = []
 ```
 
-## YOUR TASK
+## Your Task
 As mentioned, your task is to complete the "TO-DO" sections of the three functions in `tomasulo.py`: `stage_exec`, `stage_fire`, and `stage_dispatch`. Each function is responsible for performing a step of Tomasulo's algorithm in a single cycle. They are described as follows.
 
 ### `stage_dispatch`
 * This is the first stage, which is responsible for simply adding new instructions to the scheduling unit.
-* This will take in a list of `Instruction` objects (given to you by the driver code, `driver.py`).
+* This will take in a list of `Instruction` objects (given to you by the driver code, `driver.py`). The `Instruction` class is defined in `instruction.py`
 * Your job is to create `ReservationStation` objects for each of these instructions until either 1) The scheduling unit is full, or 2) There are no more Instructions to add.
 * You will also need to update the register file based on Tomasulo's algorithm.
 
@@ -122,4 +122,35 @@ As mentioned, your task is to complete the "TO-DO" sections of the three functio
 
 ### `stage_exec`
 * With instructions in our the functional units, we'll need to manage them.
-* `stage_exec` simply updates all our instructions/reservation stations that are currently executing in the functional units, incrementing their `current_cycles_spent_executing` field by 1, as 
+* `stage_exec` simply updates all our instructions/reservation stations that are currently executing in the functional units, incrementing their `current_cycles_spent_executing` field by 1 (Why? Recall that these functions simulate a single clock cycle in our processor!)
+* When `current_cycles_spent_executing` equals the `cycle_time` in a functional unit, then that instruction has fully completed!
+* In Tomasulo's algorithm, we "broadcast" this completed instruction on a common data bus, letting the scheduling unit and register file know that our instruction has completed.
+* For our code implementation, we'll simply add the functional unit's completed `associated_reservation_station` to a list of other completed `associated_reservation_station`s. We'll call this list our `common_data_bus`.
+* We'll then iterate through our scheduling unit, setting any waiting reservation station's source register "ready" bit to 1 if any source register tag matches our destination register tag.
+* We'll also iterate through our register file to declare the destination register as "ready" by setting its `ready` field to 1.
+
+A good way to think about this is that each of the three functions acts like a "Stage" in a pipeline. Instructions go from the program to the scheduling unit in `stage_dispatch`, then from the scheduling unit to the functional units in `stage_fire`, and lastly they are completed in `stage_fire`.
+
+## How the Driver Works
+Once you implement all of these functions in `tomasulo.py`, you can execute the driver! The driver, located in `driver.py` simply performs the following:
+
+1. It parses a text file (like `program_basic.txt`), converting each line of text into an `Instruction` object. All of these `Instruction` objects are then added to a list called `program_instructions`. 
+2. It analyzes the parameters of your processor and initializes it. You can set the number of ALUs, MULs, LSUs, registers, and scheduling queue size!
+3. It then iterates over the `program_instructions` list, repeatedly removing instructions cycle-by-cycle until all of them have been completed.
+   * Within each cycle, your 3 functions: `stage_dispatch`, `stage_fire`, and `stage_exec` are called in REVERSE order, starting with exec. This can be seen in the `single_cycle_processor` function in `driver.py`.
+   * Once again, these functions move instructions through your processor, from scheduling unit, to functional units, and eventually to completion.
+4. When the driver finishes, it will print some stats about the program you just ran.
+   * One of those is Instructions per Cycle (IPC). This will be our main measure of efficiency for our processor.
+
+To call the driver, open up a terminal in the folder where your code is located in, and run the following, which will print a breakdown of what your processor is doing in each cycle.
+
+```
+python3 driver.py
+```
+
+If the text becomes too large to see on a single screen, you can also write it to a text file.
+```
+python3 driver.py > my_output.txt
+```
+
+We've provided you with three programs to run: `program_basic`, `program_medium`, `program_complex`, and `program_massive`, as well as expected outputs for your processor in the expected_outputs folder. The best way to ensure that your processor is working is to make it match these outputs. To do so, we've provided you with a ton of print statements in the `stage_exec`, `stage_fire`, and `stage_dispatch` functions. 
